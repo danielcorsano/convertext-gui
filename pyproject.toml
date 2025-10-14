@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "convertext-gui"
+version = "0.1.0"
+description = "Desktop GUI application for ConverText file converter"
+authors = ["danielcorsano"]
+readme = "README.md"
+license = "MIT"
+homepage = "https://github.com/danielcorsano/convertext-gui"
+repository = "https://github.com/danielcorsano/convertext-gui"
+keywords = ["converter", "gui", "desktop", "ebook", "document"]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.14"
+convertext = { path = "../convertext", develop = true }
+tkinterdnd2 = "^0.4.2"
+ttkbootstrap = "^1.10.1"
+
+[tool.poetry.group.build]
+optional = true
+
+[tool.poetry.group.build.dependencies]
+pyinstaller = "^6.11"
+
+[tool.poetry.scripts]
+convertext-gui = "convertext_gui.gui:main"
+
+[build-system]
+requires = ["poetry-core>=2.0.0"]
+build-backend = "poetry.core.masonry.api"
