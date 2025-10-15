@@ -23,10 +23,68 @@ class ConvertExtGUI(ttk.Window):
 
     def __init__(self):
         super().__init__(
-            themename="darkly",
-            title="ConvertExt - File Converter",
+            themename="darkly",  # Start with dark theme
+            title="ConverText",
             size=(600, 800)
         )
+
+        # Customize theme to black/yellow only
+        style = ttk.Style()
+
+        # Base styles
+        style.configure('TFrame', background='#000000')
+        style.configure('TLabel', background='#000000', foreground='#FFD700', font=("Monaco", 13))
+        style.configure('TLabelframe', background='#000000', foreground='#FFD700', font=("Monaco", 13), bordercolor='#FFD700', lightcolor='#FFD700', darkcolor='#FFD700')
+        style.configure('TLabelframe.Label', background='#000000', foreground='#FFD700', font=("Monaco", 13, "bold"))
+
+        # Buttons - yellow on black, no border
+        style.configure('TButton', background='#FFD700', foreground='#000000', font=("Monaco", 13), borderwidth=0, relief='flat')
+
+        # Checkbuttons - yellow indicators
+        style.configure('TCheckbutton',
+                       background='#000000',
+                       foreground='#FFD700',
+                       font=("Monaco", 13))
+        style.map('TCheckbutton',
+                 background=[('active', '#000000'), ('selected', '#000000')],
+                 foreground=[('active', '#FFD700'), ('selected', '#FFD700')],
+                 indicatorcolor=[('selected', '#FFD700'), ('!selected', '#000000')])
+
+        # Entry fields - yellow on black
+        style.configure('TEntry',
+                       background='#000000',
+                       foreground='#FFD700',
+                       fieldbackground='#000000',
+                       font=("Monaco", 13),
+                       insertcolor='#FFD700',
+                       bordercolor='#FFD700')
+        style.map('TEntry',
+                 fieldbackground=[('focus', '#000000')],
+                 foreground=[('focus', '#FFD700')])
+
+        # Convert button - large with hover effect, no border
+        style.configure('Convert.TButton',
+                       font=("Monaco", 21, "bold"),
+                       background="#FFD700",
+                       foreground="#000000",
+                       borderwidth=0,
+                       relief='flat')
+        style.map('Convert.TButton',
+                 background=[('active', '#FFFFFF'), ('!active', '#FFD700')],
+                 foreground=[('active', '#000000'), ('!active', '#000000')])
+
+        # Configure window background
+        self.configure(background='#000000')
+
+        # Set window icon
+        try:
+            icon_path = Path(__file__).parent / "assets" / "icon.png"
+            if icon_path.exists():
+                icon = tk.PhotoImage(file=str(icon_path))
+                self.iconphoto(True, icon)
+                logger.debug(f"Loaded icon from {icon_path}")
+        except Exception as e:
+            logger.warning(f"Could not load icon: {e}")
 
         # Setup logging (debug mode enabled in dev)
         self.debug_mode = is_development_mode()
@@ -63,11 +121,11 @@ class ConvertExtGUI(ttk.Window):
         """Create all UI widgets."""
         # Drop zone
         self.drop_zone = DropZone(self, self._on_files_dropped)
-        self.drop_zone.pack(fill=X, padx=20, pady=20)
+        self.drop_zone.pack(fill=X, padx=21, pady=21)
 
         # File list
         self.file_list = FileList(self)
-        self.file_list.pack(fill=BOTH, expand=True, padx=20, pady=10)
+        self.file_list.pack(fill=BOTH, expand=True, padx=21, pady=13)
 
         # Format selection
         self._create_format_section()
@@ -86,10 +144,9 @@ class ConvertExtGUI(ttk.Window):
         frame = ttk.Labelframe(
             self,
             text="Output Formats",
-            bootstyle=PRIMARY,
-            padding=10
+            padding=13
         )
-        frame.pack(fill=X, padx=20, pady=10)
+        frame.pack(fill=X, padx=21, pady=13)
 
         # Get available formats from registry
         registry = get_registry()
@@ -113,42 +170,39 @@ class ConvertExtGUI(ttk.Window):
             cb = ttk.Checkbutton(
                 row_frame,
                 text=fmt.upper(),
-                variable=var,
-                bootstyle="primary-round-toggle"
+                variable=var
             )
-            cb.pack(side=LEFT, padx=10)
+            cb.pack(side=LEFT, padx=13)
 
     def _create_output_section(self):
         """Create output directory selector."""
         frame = ttk.Frame(self)
-        frame.pack(fill=X, padx=20, pady=10)
+        frame.pack(fill=X, padx=21, pady=13)
 
         label = ttk.Label(frame, text="Output Directory:")
         label.pack(anchor=W)
 
         row = ttk.Frame(frame)
-        row.pack(fill=X, pady=5)
+        row.pack(fill=X, pady=8)
 
-        # Dropdown for preset options
-        self.output_var = tk.StringVar(value="Same as source")
-        presets = ["Same as source", "Desktop", "Downloads", "Documents", "Custom..."]
+        # Entry field showing actual path
+        self.output_var = tk.StringVar(value="")
 
-        dropdown = ttk.Combobox(
+        output_entry = ttk.Entry(
             row,
             textvariable=self.output_var,
-            values=presets,
-            state="readonly",
-            width=30
+            font=("Monaco", 13),
+            foreground='#FFD700',
+            width=55
         )
-        dropdown.pack(side=LEFT, padx=(0, 10))
-        dropdown.bind('<<ComboboxSelected>>', self._on_output_change)
+        output_entry.pack(side=LEFT, fill=X, expand=True, padx=(0, 13))
 
         # Browse button
         browse_btn = ttk.Button(
             row,
             text="Browse...",
             command=self._browse_output,
-            bootstyle=SECONDARY
+            style='Convert.TButton'
         )
         browse_btn.pack(side=LEFT)
 
@@ -157,21 +211,19 @@ class ConvertExtGUI(ttk.Window):
         overwrite_cb = ttk.Checkbutton(
             frame,
             text="Overwrite existing files",
-            variable=self.overwrite_var,
-            bootstyle="danger-round-toggle"
+            variable=self.overwrite_var
         )
-        overwrite_cb.pack(anchor=W, pady=5)
+        overwrite_cb.pack(anchor=W, pady=8)
 
         # Debug options
         debug_row = ttk.Frame(frame)
-        debug_row.pack(fill=X, pady=5)
+        debug_row.pack(fill=X, pady=8)
 
         self.debug_var = tk.BooleanVar(value=self.debug_mode)
         debug_cb = ttk.Checkbutton(
             debug_row,
             text="Debug mode (verbose output)",
             variable=self.debug_var,
-            bootstyle="info-round-toggle",
             command=self._toggle_debug
         )
         debug_cb.pack(side=LEFT)
@@ -180,10 +232,9 @@ class ConvertExtGUI(ttk.Window):
         keep_cb = ttk.Checkbutton(
             debug_row,
             text="Keep intermediate files",
-            variable=self.keep_intermediate_var,
-            bootstyle="info-round-toggle"
+            variable=self.keep_intermediate_var
         )
-        keep_cb.pack(side=LEFT, padx=(10, 0))
+        keep_cb.pack(side=LEFT, padx=(13, 0))
 
     def _create_convert_button(self):
         """Create main convert button."""
@@ -191,68 +242,75 @@ class ConvertExtGUI(ttk.Window):
             self,
             text="Convert",
             command=self.start_conversion,
-            bootstyle=SUCCESS,
-            width=20
+            style='Convert.TButton',
+            width=21
         )
-        self.convert_btn.pack(pady=20)
+        self.convert_btn.pack(pady=21)
 
     def _create_progress_section(self):
         """Create progress bar and status."""
         frame = ttk.Frame(self)
-        frame.pack(fill=X, padx=20, pady=10)
+        frame.pack(fill=X, padx=21, pady=13)
 
-        # Progress label
+        # Progress label (hidden initially)
         self.progress_label = ttk.Label(
             frame,
-            text="Ready to convert",
-            font=("Helvetica", 10)
+            text="",
+            font=("Monaco", 10)
         )
         self.progress_label.pack(anchor=W)
 
-        # Progress bar
+        # Progress bar (yellow theme)
+        style = ttk.Style()
+        style.configure('Yellow.Horizontal.TProgressbar',
+                       background='#FFD700',
+                       troughcolor='#000000',
+                       bordercolor='#FFD700',
+                       lightcolor='#FFD700',
+                       darkcolor='#FFD700')
+
         self.progress_bar = ttk.Progressbar(
             frame,
             mode="determinate",
-            bootstyle="success-striped",
+            style='Yellow.Horizontal.TProgressbar',
             maximum=100
         )
         self.progress_bar.pack(fill=X, pady=5)
 
-        # Status text
+        # Status text with ETA
         self.status_label = ttk.Label(
             frame,
             text="",
-            font=("Helvetica", 9),
-            foreground="gray"
+            font=("Monaco", 9)
         )
         self.status_label.pack(anchor=W)
 
     def _on_files_dropped(self, files):
         """Handle files dropped or selected."""
         self.file_list.add_files(files)
+        self._update_output_from_files()
 
-    def _on_output_change(self, event):
-        """Handle output directory selection."""
-        selection = self.output_var.get()
-
-        if selection == "Desktop":
-            self.output_dir = Path.home() / "Desktop"
-        elif selection == "Downloads":
-            self.output_dir = Path.home() / "Downloads"
-        elif selection == "Documents":
-            self.output_dir = Path.home() / "Documents"
-        elif selection == "Custom...":
-            self._browse_output()
-        else:  # "Same as source"
+    def _update_output_from_files(self):
+        """Update output path based on first selected file."""
+        if self.file_list.files:
+            # Default to first file's directory
+            first_file = self.file_list.files[0]
+            self.output_dir = first_file.parent
+            self.output_var.set(str(self.output_dir))
+        else:
+            self.output_var.set("")
             self.output_dir = None
 
     def _browse_output(self):
         """Browse for custom output directory."""
         from tkinter import filedialog
-        directory = filedialog.askdirectory(title="Select Output Directory")
+        directory = filedialog.askdirectory(
+            title="Select Output Directory",
+            initialdir=str(self.output_dir) if self.output_dir else str(Path.home())
+        )
         if directory:
             self.output_dir = Path(directory)
-            self.output_var.set("Custom...")
+            self.output_var.set(str(self.output_dir))
 
     def start_conversion(self):
         """Start conversion process."""
@@ -297,12 +355,12 @@ class ConvertExtGUI(ttk.Window):
             if result.success:
                 self.progress_label.configure(
                     text=f"✓ {result.source_path.name} → {result.target_path.name}",
-                    foreground="green"
+                    foreground="#FFD700"
                 )
             else:
                 self.progress_label.configure(
                     text=f"✗ {result.source_path.name}: {result.error}",
-                    foreground="red"
+                    foreground="#FFFFFF"
                 )
 
         if progress >= 100:
@@ -402,10 +460,9 @@ class ConvertExtGUI(ttk.Window):
         from tkinter import messagebox
         version = self._get_version()
         messagebox.showinfo(
-            "About ConvertExt",
-            f"ConvertExt v{version}\n\n"
-            "Desktop GUI for ConverText\n"
-            "Lightweight universal text converter\n\n"
+            "About ConverText",
+            f"ConverText v{version}\n\n"
+            "Universal document converter\n\n"
             f"Debug mode: {self.debug_mode}\n"
             f"Log file: {self.log_file}\n\n"
             "License: MIT",

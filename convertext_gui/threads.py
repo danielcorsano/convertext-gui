@@ -2,6 +2,7 @@
 
 import threading
 import logging
+import time
 from pathlib import Path
 from convertext.core import ConversionEngine
 
@@ -21,11 +22,13 @@ class ConversionThread(threading.Thread):
         self.keep_intermediate = keep_intermediate
         self.callback = callback
         self.results = []
+        self.start_time = None
 
     def run(self):
         """Execute conversions."""
         total = len(self.files) * len(self.formats)
         completed = 0
+        self.start_time = time.time()
 
         logger.info(f"Starting conversion: {len(self.files)} files, {len(self.formats)} formats")
 
@@ -68,10 +71,24 @@ class ConversionThread(threading.Thread):
                     )
                     self.results.append(result)
 
-                # Update progress
+                # Update progress with ETA
                 completed += 1
                 progress = (completed / total) * 100
-                status = f"Converting {file.name} to {fmt.upper()}..."
+
+                # Calculate ETA
+                elapsed = time.time() - self.start_time
+                if completed > 0:
+                    avg_time = elapsed / completed
+                    remaining = total - completed
+                    eta_seconds = int(avg_time * remaining)
+                    if eta_seconds > 60:
+                        eta = f"{eta_seconds // 60}m {eta_seconds % 60}s"
+                    else:
+                        eta = f"{eta_seconds}s"
+                else:
+                    eta = "calculating..."
+
+                status = f"Converting... {int(progress)}% | ETA: {eta}"
 
                 self.callback(progress, status, result)
 

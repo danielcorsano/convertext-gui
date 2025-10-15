@@ -14,44 +14,34 @@ class DropZone(ttk.Frame):
     """Drag-and-drop file zone."""
 
     def __init__(self, parent, on_drop_callback):
-        super().__init__(parent, bootstyle=INFO, height=200)
+        super().__init__(parent, height=144)
         self.on_drop_callback = on_drop_callback
         self.dnd_enabled = False
 
-        # Try to enable drag-and-drop
-        try:
-            self.drop_target_register(DND_FILES)
-            self.dnd_bind('<<Drop>>', self._on_drop)
-            self.dnd_enabled = True
-            text = "📁 Drag & Drop Files Here\n\nor click to browse..."
-            logger.info("Drag-and-drop enabled")
-        except Exception as e:
-            logger.warning(f"Drag-and-drop not available: {e}")
-            text = "📁 Click to Browse Files..."
+        # Create a frame to hold the button
+        button_frame = ttk.Frame(self)
+        button_frame.pack(expand=True, pady=21)
 
-        # Label
-        self.label = ttk.Label(
-            self,
-            text=text,
-            font=("Helvetica", 14),
-            bootstyle="inverse-info",
-            anchor="center"
+        # Button styled like Convert
+        self.browse_btn = ttk.Button(
+            button_frame,
+            text="Browse...",
+            command=self._on_click,
+            style='Convert.TButton',
+            width=21
         )
-        self.label.pack(expand=True, fill=BOTH, padx=20, pady=20)
+        self.browse_btn.pack()
 
-        # Click to browse
-        self.label.bind('<Button-1>', self._on_click)
-
-        # Hover effect
-        self.label.bind('<Enter>', self._on_hover_enter)
-        self.label.bind('<Leave>', self._on_hover_leave)
+        # Hover effects
+        self.browse_btn.bind('<Enter>', self._on_hover_enter)
+        self.browse_btn.bind('<Leave>', self._on_hover_leave)
 
     def _on_drop(self, event):
         """Handle file drop."""
         files = self.tk.splitlist(event.data)
         self.on_drop_callback(files)
 
-    def _on_click(self, event):
+    def _on_click(self):
         """Handle click to browse."""
         from tkinter import filedialog
         files = filedialog.askopenfilenames(
@@ -73,12 +63,12 @@ class DropZone(ttk.Frame):
             self.on_drop_callback(files)
 
     def _on_hover_enter(self, event):
-        """Hover effect."""
-        self.label.configure(bootstyle="inverse-primary")
+        """Hover effect - white background."""
+        pass  # Handled by ttk style mapping
 
     def _on_hover_leave(self, event):
-        """Hover effect."""
-        self.label.configure(bootstyle="inverse-info")
+        """Hover effect - back to normal."""
+        pass  # Handled by ttk style mapping
 
 
 class FileList(ttk.Frame):
@@ -92,12 +82,12 @@ class FileList(ttk.Frame):
         header = ttk.Label(
             self,
             text="Selected Files:",
-            font=("Helvetica", 12, "bold")
+            font=("Monaco", 12, "bold")
         )
         header.pack(anchor=W, pady=(10, 5))
 
         # Scrollable frame
-        self.canvas = tk.Canvas(self, height=150, bg="#2b3e50")
+        self.canvas = tk.Canvas(self, height=150, bg="#000000")
         self.scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
         self.scrollable_frame = ttk.Frame(self.canvas)
 
@@ -131,7 +121,7 @@ class FileList(ttk.Frame):
         label = ttk.Label(
             frame,
             text=f"📄 {file_path.name}",
-            font=("Helvetica", 10)
+            font=("Monaco", 10)
         )
         label.pack(side=LEFT, padx=5)
 
@@ -176,9 +166,9 @@ class DebugConsole(tk.Toplevel):
         self.text = tk.Text(
             text_frame,
             wrap=tk.WORD,
-            font=("Courier", 10),
-            bg="#1e1e1e",
-            fg="#d4d4d4",
+            font=("Monaco", 10),
+            bg="#000000",
+            fg="#FFD700",
             state=tk.DISABLED
         )
         scrollbar = ttk.Scrollbar(text_frame, command=self.text.yview)
