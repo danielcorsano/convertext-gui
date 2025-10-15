@@ -1,0 +1,442 @@
+"""Main GUI application."""
+
+import sys
+import logging
+from pathlib import Path
+import tkinter as tk
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
+
+from convertext.converters.loader import load_converters
+from convertext.config import Config
+from convertext.core import ConversionEngine
+from convertext.registry import get_registry
+
+from convertext_gui.widgets import DropZone, FileList, DebugConsole
+from convertext_gui.logging_config import setup_logging, is_development_mode
+
+logger = logging.getLogger(__name__)
+
+
+class ConvertExtGUI(ttk.Window):
+    """Main GUI window for ConverText."""
+
+    def __init__(self):
+        super().__init__(
+            themename="darkly",
+            title="ConvertExt - File Converter",
+            size=(600, 800)
+        )
+
+        # Setup logging (debug mode enabled in dev)
+        self.debug_mode = is_development_mode()
+        self.log_file = setup_logging(self.debug_mode)
+        logger.info(f"Starting ConverText GUI v{self._get_version()}")
+        logger.info(f"Debug mode: {self.debug_mode}")
+        logger.info(f"Log file: {self.log_file}")
+
+        # Initialize convertext
+        load_converters()
+        self.convertext_config = Config()
+        self.engine = ConversionEngine(self.convertext_config)
+
+        # State
+        self.format_vars = {}
+        self.output_dir = None
+        self.debug_console = None
+
+        # Build UI
+        self._create_widgets()
+        self._bind_shortcuts()
+        self._create_menu()
+        self._center_window()
+
+    def _get_version(self):
+        """Get application version."""
+        try:
+            from convertext_gui import __version__
+            return __version__
+        except ImportError:
+            return "unknown"
+
+    def _create_widgets(self):
+        """Create all UI widgets."""
+        # Drop zone
+        self.drop_zone = DropZone(self, self._on_files_dropped)
+        self.drop_zone.pack(fill=X, padx=20, pady=20)
+
+        # File list
+        self.file_list = FileList(self)
+        self.file_list.pack(fill=BOTH, expand=True, padx=20, pady=10)
+
+        # Format selection
+        self._create_format_section()
+
+        # Output settings
+        self._create_output_section()
+
+        # Convert button
+        self._create_convert_button()
+
+        # Progress section
+        self._create_progress_section()
+
+    def _create_format_section(self):
+        """Create format selection checkboxes."""
+        frame = ttk.Labelframe(
+            self,
+            text="Output Formats",
+            bootstyle=PRIMARY,
+            padding=10
+        )
+        frame.pack(fill=X, padx=20, pady=10)
+
+        # Get available formats from registry
+        registry = get_registry()
+        formats = registry.list_supported_formats()
+
+        # Unique target formats
+        all_targets = set()
+        for targets in formats.values():
+            all_targets.update(targets)
+
+        # Create checkboxes (3 per row)
+        row_frame = None
+        for i, fmt in enumerate(sorted(all_targets)):
+            if i % 3 == 0:
+                row_frame = ttk.Frame(frame)
+                row_frame.pack(fill=X, pady=2)
+
+            var = tk.BooleanVar()
+            self.format_vars[fmt] = var
+
+            cb = ttk.Checkbutton(
+                row_frame,
+                text=fmt.upper(),
+                variable=var,
+                bootstyle="primary-round-toggle"
+            )
+            cb.pack(side=LEFT, padx=10)
+
+    def _create_output_section(self):
+        """Create output directory selector."""
+        frame = ttk.Frame(self)
+        frame.pack(fill=X, padx=20, pady=10)
+
+        label = ttk.Label(frame, text="Output Directory:")
+        label.pack(anchor=W)
+
+        row = ttk.Frame(frame)
+        row.pack(fill=X, pady=5)
+
+        # Dropdown for preset options
+        self.output_var = tk.StringVar(value="Same as source")
+        presets = ["Same as source", "Desktop", "Downloads", "Documents", "Custom..."]
+
+        dropdown = ttk.Combobox(
+            row,
+            textvariable=self.output_var,
+            values=presets,
+            state="readonly",
+            width=30
+        )
+        dropdown.pack(side=LEFT, padx=(0, 10))
+        dropdown.bind('<<ComboboxSelected>>', self._on_output_change)
+
+        # Browse button
+        browse_btn = ttk.Button(
+            row,
+            text="Browse...",
+            command=self._browse_output,
+            bootstyle=SECONDARY
+        )
+        browse_btn.pack(side=LEFT)
+
+        # Overwrite checkbox
+        self.overwrite_var = tk.BooleanVar(value=False)
+        overwrite_cb = ttk.Checkbutton(
+            frame,
+            text="Overwrite existing files",
+            variable=self.overwrite_var,
+            bootstyle="danger-round-toggle"
+        )
+        overwrite_cb.pack(anchor=W, pady=5)
+
+        # Debug options
+        debug_row = ttk.Frame(frame)
+        debug_row.pack(fill=X, pady=5)
+
+        self.debug_var = tk.BooleanVar(value=self.debug_mode)
+        debug_cb = ttk.Checkbutton(
+            debug_row,
+            text="Debug mode (verbose output)",
+            variable=self.debug_var,
+            bootstyle="info-round-toggle",
+            command=self._toggle_debug
+        )
+        debug_cb.pack(side=LEFT)
+
+        self.keep_intermediate_var = tk.BooleanVar(value=False)
+        keep_cb = ttk.Checkbutton(
+            debug_row,
+            text="Keep intermediate files",
+            variable=self.keep_intermediate_var,
+            bootstyle="info-round-toggle"
+        )
+        keep_cb.pack(side=LEFT, padx=(10, 0))
+
+    def _create_convert_button(self):
+        """Create main convert button."""
+        self.convert_btn = ttk.Button(
+            self,
+            text="Convert",
+            command=self.start_conversion,
+            bootstyle=SUCCESS,
+            width=20
+        )
+        self.convert_btn.pack(pady=20)
+
+    def _create_progress_section(self):
+        """Create progress bar and status."""
+        frame = ttk.Frame(self)
+        frame.pack(fill=X, padx=20, pady=10)
+
+        # Progress label
+        self.progress_label = ttk.Label(
+            frame,
+            text="Ready to convert",
+            font=("Helvetica", 10)
+        )
+        self.progress_label.pack(anchor=W)
+
+        # Progress bar
+        self.progress_bar = ttk.Progressbar(
+            frame,
+            mode="determinate",
+            bootstyle="success-striped",
+            maximum=100
+        )
+        self.progress_bar.pack(fill=X, pady=5)
+
+        # Status text
+        self.status_label = ttk.Label(
+            frame,
+            text="",
+            font=("Helvetica", 9),
+            foreground="gray"
+        )
+        self.status_label.pack(anchor=W)
+
+    def _on_files_dropped(self, files):
+        """Handle files dropped or selected."""
+        self.file_list.add_files(files)
+
+    def _on_output_change(self, event):
+        """Handle output directory selection."""
+        selection = self.output_var.get()
+
+        if selection == "Desktop":
+            self.output_dir = Path.home() / "Desktop"
+        elif selection == "Downloads":
+            self.output_dir = Path.home() / "Downloads"
+        elif selection == "Documents":
+            self.output_dir = Path.home() / "Documents"
+        elif selection == "Custom...":
+            self._browse_output()
+        else:  # "Same as source"
+            self.output_dir = None
+
+    def _browse_output(self):
+        """Browse for custom output directory."""
+        from tkinter import filedialog
+        directory = filedialog.askdirectory(title="Select Output Directory")
+        if directory:
+            self.output_dir = Path(directory)
+            self.output_var.set("Custom...")
+
+    def start_conversion(self):
+        """Start conversion process."""
+        # Validate
+        if not self.file_list.files:
+            self._show_error("No files selected", "Please add files to convert.")
+            return
+
+        selected_formats = [fmt for fmt, var in self.format_vars.items() if var.get()]
+        if not selected_formats:
+            self._show_error("No formats selected", "Please select at least one output format.")
+            return
+
+        # Disable UI
+        self.convert_btn.configure(state="disabled", text="Converting...")
+        self.progress_bar['value'] = 0
+
+        # Start thread
+        from convertext_gui.threads import ConversionThread
+        logger.info(f"Starting conversion: {len(self.file_list.files)} files to {selected_formats}")
+        thread = ConversionThread(
+            engine=self.engine,
+            files=self.file_list.files,
+            formats=selected_formats,
+            output_dir=self.output_dir,
+            overwrite=self.overwrite_var.get(),
+            keep_intermediate=self.keep_intermediate_var.get(),
+            callback=self._on_conversion_progress
+        )
+        thread.start()
+
+    def _on_conversion_progress(self, progress, status, result):
+        """Update UI from conversion thread."""
+        self.after(0, self._update_ui, progress, status, result)
+
+    def _update_ui(self, progress, status, result):
+        """Update UI elements (called from main thread)."""
+        self.progress_bar['value'] = progress
+        self.status_label.configure(text=status)
+
+        if result:
+            if result.success:
+                self.progress_label.configure(
+                    text=f"✓ {result.source_path.name} → {result.target_path.name}",
+                    foreground="green"
+                )
+            else:
+                self.progress_label.configure(
+                    text=f"✗ {result.source_path.name}: {result.error}",
+                    foreground="red"
+                )
+
+        if progress >= 100:
+            # Re-enable UI
+            self.convert_btn.configure(state="normal", text="Convert")
+            self._show_success()
+
+    def _show_success(self):
+        """Show success dialog."""
+        from tkinter import messagebox
+        result = messagebox.askyesno(
+            "Conversion Complete",
+            f"Successfully converted {len(self.file_list.files)} file(s)!\n\nOpen output folder?",
+            parent=self
+        )
+        if result:
+            self._open_output_folder()
+
+    def _open_output_folder(self):
+        """Open output folder in system file manager."""
+        import subprocess
+
+        folder = self.output_dir if self.output_dir else self.file_list.files[0].parent
+
+        if sys.platform == "win32":
+            subprocess.Popen(f'explorer "{folder}"')
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", str(folder)])
+        else:  # linux
+            subprocess.Popen(["xdg-open", str(folder)])
+
+    def _show_error(self, title, message):
+        """Show error dialog."""
+        from tkinter import messagebox
+        messagebox.showerror(title, message, parent=self)
+
+    def _toggle_debug(self):
+        """Toggle debug mode."""
+        self.debug_mode = self.debug_var.get()
+        setup_logging(self.debug_mode)
+        logger.info(f"Debug mode {'enabled' if self.debug_mode else 'disabled'}")
+
+        if self.debug_mode and not self.debug_console:
+            self._show_debug_console()
+        elif not self.debug_mode and self.debug_console:
+            self._hide_debug_console()
+
+    def _show_debug_console(self):
+        """Show debug console window."""
+        if self.debug_console:
+            return
+
+        self.debug_console = DebugConsole(self)
+        logger.info("Debug console opened")
+
+    def _hide_debug_console(self):
+        """Hide debug console window."""
+        if self.debug_console:
+            self.debug_console.destroy()
+            self.debug_console = None
+            logger.info("Debug console closed")
+
+    def _bind_shortcuts(self):
+        """Bind keyboard shortcuts."""
+        self.bind('<Control-o>', lambda e: self.drop_zone._on_click(None))
+        self.bind('<Control-Return>', lambda e: self.start_conversion())
+        self.bind('<Escape>', lambda e: self.quit())
+        self.bind('<Control-q>', lambda e: self.quit())
+        self.bind('<Control-d>', lambda e: self._toggle_debug())
+        logger.debug("Keyboard shortcuts bound")
+
+    def _create_menu(self):
+        """Create menu bar."""
+        menubar = tk.Menu(self)
+        self.config(menu=menubar)
+
+        # File menu
+        file_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="File", menu=file_menu)
+        file_menu.add_command(label="Open Files...", command=lambda: self.drop_zone._on_click(None), accelerator="Ctrl+O")
+        file_menu.add_separator()
+        file_menu.add_command(label="Quit", command=self.quit, accelerator="Ctrl+Q")
+
+        # View menu
+        view_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="View", menu=view_menu)
+        view_menu.add_checkbutton(label="Debug Console", variable=self.debug_var, command=self._toggle_debug, accelerator="Ctrl+D")
+
+        # Help menu
+        help_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Help", menu=help_menu)
+        help_menu.add_command(label="About", command=self._show_about)
+        help_menu.add_command(label="View Logs", command=self._open_log_file)
+
+    def _show_about(self):
+        """Show about dialog."""
+        from tkinter import messagebox
+        version = self._get_version()
+        messagebox.showinfo(
+            "About ConvertExt",
+            f"ConvertExt v{version}\n\n"
+            "Desktop GUI for ConverText\n"
+            "Lightweight universal text converter\n\n"
+            f"Debug mode: {self.debug_mode}\n"
+            f"Log file: {self.log_file}\n\n"
+            "License: MIT",
+            parent=self
+        )
+
+    def _open_log_file(self):
+        """Open log file in default editor."""
+        import subprocess
+        if sys.platform == "win32":
+            subprocess.Popen(['notepad', str(self.log_file)])
+        elif sys.platform == "darwin":
+            subprocess.Popen(['open', str(self.log_file)])
+        else:
+            subprocess.Popen(['xdg-open', str(self.log_file)])
+
+    def _center_window(self):
+        """Center window on screen."""
+        self.update_idletasks()
+        width = self.winfo_width()
+        height = self.winfo_height()
+        x = (self.winfo_screenwidth() // 2) - (width // 2)
+        y = (self.winfo_screenheight() // 2) - (height // 2)
+        self.geometry(f'{width}x{height}+{x}+{y}')
+
+
+def main():
+    """Main entry point."""
+    app = ConvertExtGUI()
+    app.mainloop()
+
+
+if __name__ == "__main__":
+    main()
