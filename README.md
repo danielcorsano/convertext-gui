@@ -2,6 +2,8 @@
 
 Desktop GUI application for ConverText file converter with Monaco monospace typography and minimalist black/yellow design.
 
+Convert between all major document and ebook formats with a single terminal command. Get editable .txt or .md from PDF or ebook formats or make ebooks/PDFs from editable text formats. Work on multiple files at the same time and send them anywhere in the file system instantly.
+
 ## Features
 
 - Click-to-browse file selection
