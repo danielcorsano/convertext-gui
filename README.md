@@ -67,6 +67,29 @@ poetry run pytest
 poetry install --with dev
 ```
 
+## Building Standalone Applications
+
+Build platform-specific executables using PyInstaller:
+
+```bash
+# Install build dependencies
+poetry install --with build
+
+# Build for macOS
+poetry run python build_scripts/build_macos.py
+
+# Build for Windows (on Windows)
+poetry run python build_scripts/build_windows.py
+
+# Build for Linux (on Linux)
+poetry run python build_scripts/build_linux.py
+```
+
+Built applications will be in the `dist/` directory:
+- **macOS**: `dist/ConverText.app`
+- **Windows**: `dist/ConverText.exe`
+- **Linux**: `dist/convertext-gui`
+
 ### macOS tkinter setup
 
 If you get "No module named _tkinter":
