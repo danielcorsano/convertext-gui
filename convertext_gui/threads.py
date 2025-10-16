@@ -89,7 +89,6 @@ class ConversionThread(threading.Thread):
                     eta = "calculating..."
 
                 status = f"Converting... {int(progress)}% | ETA: {eta}"
-
                 self.callback(progress, status, result)
 
         # Finish

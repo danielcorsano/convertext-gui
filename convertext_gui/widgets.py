@@ -4,7 +4,6 @@ import tkinter as tk
 import ttkbootstrap as ttk
 import logging
 from pathlib import Path
-from tkinterdnd2 import DND_FILES, TkinterDnD
 from ttkbootstrap.constants import *
 
 logger = logging.getLogger(__name__)

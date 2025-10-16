@@ -6,6 +6,7 @@ from pathlib import Path
 import tkinter as tk
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
+import queue
 
 from convertext.converters.loader import load_converters
 from convertext.config import Config
@@ -13,7 +14,7 @@ from convertext.core import ConversionEngine
 from convertext.registry import get_registry
 
 from convertext_gui.widgets import DropZone, FileList, DebugConsole
-from convertext_gui.logging_config import setup_logging, is_development_mode
+from convertext_gui.logging_config import setup_logging
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,8 @@ class ConvertExtGUI(ttk.Window):
         super().__init__(
             themename="darkly",  # Start with dark theme
             title="ConverText",
-            size=(600, 800)
+            size=(800, 1000),
+            resizable=(True, True)
         )
 
         # Customize theme to black/yellow only
@@ -40,15 +42,21 @@ class ConvertExtGUI(ttk.Window):
         # Buttons - yellow on black, no border
         style.configure('TButton', background='#FFD700', foreground='#000000', font=("Monaco", 13), borderwidth=0, relief='flat')
 
-        # Checkbuttons - yellow indicators
+        # Checkbuttons - yellow square indicators
         style.configure('TCheckbutton',
                        background='#000000',
                        foreground='#FFD700',
-                       font=("Monaco", 13))
+                       font=("Monaco", 13),
+                       indicatorrelief='flat',
+                       indicatordiameter=13,
+                       indicatormargin=5,
+                       indicatorbackground='#000000',
+                       indicatorforeground='#FFD700')
         style.map('TCheckbutton',
                  background=[('active', '#000000'), ('selected', '#000000')],
                  foreground=[('active', '#FFD700'), ('selected', '#FFD700')],
-                 indicatorcolor=[('selected', '#FFD700'), ('!selected', '#000000')])
+                 indicatorbackground=[('selected', '#FFD700'), ('!selected', '#000000')],
+                 indicatorforeground=[('selected', '#000000'), ('!selected', '#FFD700')])
 
         # Entry fields - yellow on black
         style.configure('TEntry',
@@ -86,8 +94,8 @@ class ConvertExtGUI(ttk.Window):
         except Exception as e:
             logger.warning(f"Could not load icon: {e}")
 
-        # Setup logging (debug mode enabled in dev)
-        self.debug_mode = is_development_mode()
+        # Setup logging (debug mode disabled by default)
+        self.debug_mode = False
         self.log_file = setup_logging(self.debug_mode)
         logger.info(f"Starting ConverText GUI v{self._get_version()}")
         logger.info(f"Debug mode: {self.debug_mode}")
@@ -102,12 +110,16 @@ class ConvertExtGUI(ttk.Window):
         self.format_vars = {}
         self.output_dir = None
         self.debug_console = None
+        self.progress_queue = queue.Queue()
 
         # Build UI
         self._create_widgets()
         self._bind_shortcuts()
         self._create_menu()
         self._center_window()
+
+        # Start queue processor
+        self._process_progress_queue()
 
     def _get_version(self):
         """Get application version."""
@@ -186,14 +198,14 @@ class ConvertExtGUI(ttk.Window):
         row.pack(fill=X, pady=8)
 
         # Entry field showing actual path
-        self.output_var = tk.StringVar(value="")
+        self.output_var = tk.StringVar(value=str(Path.home()))
+        self.output_dir = Path.home()
 
         output_entry = ttk.Entry(
             row,
             textvariable=self.output_var,
             font=("Monaco", 13),
-            foreground='#FFD700',
-            width=55
+            foreground='#FFD700'
         )
         output_entry.pack(side=LEFT, fill=X, expand=True, padx=(0, 13))
 
@@ -344,29 +356,46 @@ class ConvertExtGUI(ttk.Window):
 
     def _on_conversion_progress(self, progress, status, result):
         """Update UI from conversion thread."""
-        self.after(0, self._update_ui, progress, status, result)
+        self.progress_queue.put((progress, status, result))
+
+    def _process_progress_queue(self):
+        """Process queued progress updates (runs in main thread)."""
+        try:
+            while True:
+                progress, status, result = self.progress_queue.get_nowait()
+                self._update_ui(progress, status, result)
+        except queue.Empty:
+            pass
+        finally:
+            self.after(100, self._process_progress_queue)
 
     def _update_ui(self, progress, status, result):
         """Update UI elements (called from main thread)."""
-        self.progress_bar['value'] = progress
-        self.status_label.configure(text=status)
+        try:
+            self.progress_bar['value'] = progress
+            self.status_label.configure(text=status)
 
-        if result:
-            if result.success:
-                self.progress_label.configure(
-                    text=f"✓ {result.source_path.name} → {result.target_path.name}",
-                    foreground="#FFD700"
-                )
-            else:
-                self.progress_label.configure(
-                    text=f"✗ {result.source_path.name}: {result.error}",
-                    foreground="#FFFFFF"
-                )
+            if result:
+                if result.success:
+                    self.progress_label.configure(
+                        text=f"✓ {result.source_path.name} → {result.target_path.name}",
+                        foreground="#FFD700"
+                    )
+                else:
+                    self.progress_label.configure(
+                        text=f"✗ {result.source_path.name}: {result.error}",
+                        foreground="#FFFFFF"
+                    )
 
-        if progress >= 100:
-            # Re-enable UI
-            self.convert_btn.configure(state="normal", text="Convert")
-            self._show_success()
+            if progress >= 100:
+                self.convert_btn.configure(state="normal", text="Convert")
+                self._show_success()
+        except Exception as e:
+            logger.exception(f"UI update failed: {e}")
+            try:
+                self.convert_btn.configure(state="normal", text="Convert")
+            except:
+                pass
 
     def _show_success(self):
         """Show success dialog."""
@@ -482,11 +511,12 @@ class ConvertExtGUI(ttk.Window):
     def _center_window(self):
         """Center window on screen."""
         self.update_idletasks()
-        width = self.winfo_width()
-        height = self.winfo_height()
+        width = 800
+        height = 1000
         x = (self.winfo_screenwidth() // 2) - (width // 2)
         y = (self.winfo_screenheight() // 2) - (height // 2)
         self.geometry(f'{width}x{height}+{x}+{y}')
+        self.minsize(700, 800)
 
 
 def main():
