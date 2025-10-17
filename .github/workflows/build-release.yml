@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - 'v*'
+      - 'v*-beta'
+      - 'v*-alpha'
 
 jobs:
   build-macos:
@@ -125,6 +127,15 @@ jobs:
         with:
           path: artifacts
 
+      - name: Check if pre-release
+        id: prerelease
+        run: |
+          if [[ "${{ github.ref_name }}" =~ (alpha|beta|rc) ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
@@ -133,7 +144,7 @@ jobs:
             artifacts/windows-build/ConverText.exe
             artifacts/linux-build/ConverText-linux.tar.gz
           draft: false
-          prerelease: false
+          prerelease: ${{ steps.prerelease.outputs.is_prerelease }}
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,8 +1,10 @@
 # ConverText GUI
 
+> **⚠️ Beta Release**: This is a beta version. Builds for Windows and Linux are untested on those platforms. Please report any issues on GitHub.
+
 Desktop GUI application for ConverText file converter with Monaco monospace typography and minimalist black/yellow design.
 
-Convert between all major document and ebook formats with a single terminal command. Get editable .txt or .md from PDF or ebook formats or make ebooks/PDFs from editable text formats. Work on multiple files at the same time and send them anywhere in the file system instantly.
+Convert between all major document and ebook formats with a single click. Get editable .txt or .md from PDF or ebook formats or make ebooks/PDFs from editable text formats. Work on multiple files at the same time and send them anywhere in the file system instantly.
 
 ## Features
 
@@ -18,13 +20,15 @@ Convert between all major document and ebook formats with a single terminal comm
 
 ## Installation
 
-Download the standalone application for your platform:
+Download the latest beta release for your platform from [GitHub Releases](https://github.com/danielcorsano/convertext-gui/releases):
 
-- **Windows**: ConverText.exe
-- **macOS**: ConverText.app
-- **Linux**: ConverText.AppImage
+- **macOS**: ConverText-macos.zip (tested ✅)
+- **Windows**: ConverText.exe (untested ⚠️)
+- **Linux**: ConverText-linux.tar.gz (untested ⚠️)
 
 No Python installation required!
+
+**Beta Feedback**: Please report issues, bugs, or feature requests on GitHub Issues.
 
 ## Usage
 
