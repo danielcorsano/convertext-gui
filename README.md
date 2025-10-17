@@ -69,6 +69,22 @@ poetry install --with dev
 
 ## Building Standalone Applications
 
+### Automated Builds (Recommended)
+
+GitHub Actions automatically builds all three platforms when you create a release tag:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+This triggers the workflow which builds and attaches:
+- **macOS**: ConverText-macos.zip
+- **Windows**: ConverText.exe
+- **Linux**: ConverText-linux.tar.gz
+
+### Manual Builds
+
 Build platform-specific executables using PyInstaller:
 
 ```bash
