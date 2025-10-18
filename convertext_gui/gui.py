@@ -394,7 +394,8 @@ class ConvertExtGUI(ttk.Window):
                         foreground="#FFFFFF"
                     )
 
-            if progress >= 100:
+            # Show success dialog only on final completion (when result is None)
+            if progress >= 100 and result is None:
                 self.convert_btn.configure(state="normal", text="Convert")
                 self._show_success()
         except Exception as e:
