@@ -86,15 +86,22 @@ class ConvertExtGUI(ttk.Window):
 
         # Set window icon
         try:
-            icon_path = Path(__file__).parent / "assets" / "icon.png"
+            import sys
+            if getattr(sys, 'frozen', False):
+                # PyInstaller bundle - assets in Resources/convertext_gui/
+                base_path = Path(sys._MEIPASS) / "convertext_gui"
+            else:
+                # Running from source
+                base_path = Path(__file__).parent
+
+            icon_path = base_path / "assets" / "icon.png"
             if icon_path.exists():
                 icon = tk.PhotoImage(file=str(icon_path))
                 self.iconphoto(True, icon)
-                logger.debug(f"Loaded icon from {icon_path}")
-        except Exception as e:
-            logger.warning(f"Could not load icon: {e}")
+        except Exception:
+            pass
 
-        # Setup logging (debug mode disabled by default)
+        # Setup logging
         self.debug_mode = False
         self.log_file = setup_logging(self.debug_mode)
         logger.info(f"Starting ConverText GUI v{self._get_version()}")
