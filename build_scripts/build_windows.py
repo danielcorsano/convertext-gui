@@ -26,6 +26,14 @@ def build_windows():
         "--hidden-import=tkinter",
         "--hidden-import=ttkbootstrap",
         "--hidden-import=queue",
+        # Size optimizations
+        "--strip",  # Remove debug symbols
+        "--exclude-module=test",
+        "--exclude-module=unittest",
+        "--exclude-module=email",
+        "--exclude-module=http.server",
+        "--exclude-module=pydoc",
+        "--exclude-module=lib2to3",
         "--noconfirm",
         "--clean",
     ]
