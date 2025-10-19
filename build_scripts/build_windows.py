@@ -48,7 +48,7 @@ def build_windows():
 
     PyInstaller.__main__.run(args)
 
-    print("\n✓ Build complete!")
+    print("\nBuild complete!")
     print(f"Executable: {PROJECT_ROOT}/dist/ConverText.exe")
     print("\nTo test:")
     print("  dist\\ConverText.exe")

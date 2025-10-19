@@ -56,7 +56,7 @@ def build_macos():
         shutil.rmtree(redundant_dir)
         print(f"\nCleaned up: {redundant_dir}")
 
-    print("\n✓ Build complete!")
+    print("\nBuild complete!")
     print(f"Application: {PROJECT_ROOT}/dist/ConverText.app")
     print("\nTo test:")
     print("  open dist/ConverText.app")
