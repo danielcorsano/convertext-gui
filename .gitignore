@@ -31,7 +31,7 @@ env/
 .venv
 
 # Poetry
-poetry.lock
+# poetry.lock - committed for reproducible application builds
 .poetry
 
 # PyInstaller
