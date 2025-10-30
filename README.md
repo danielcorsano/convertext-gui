@@ -10,10 +10,7 @@ Convert between all major document and ebook formats with a single click. Get ed
 
 - Click-to-browse file selection
 - Batch file processing
-- All formats supported by ConverText (PDF, DOCX, EPUB, MOBI, etc.)
 - Real-time conversion progress with ETA
-- Monaco monospace interface
-- Black background with yellow accents
 - Debug console for verbose logging
 - Automatic output directory detection
 - Cross-platform (Windows, macOS, Linux)
@@ -59,16 +56,13 @@ Requires Python 3.10-3.13 with tkinter support and the convertext library.
 
 ```bash
 # Install dependencies
-poetry install
+pip install -e .
 
 # Run from source
-poetry run convertext-gui
+convertext-gui
 
 # Run tests
-poetry run pytest
-
-# Install with development dependencies
-poetry install --with dev
+pytest
 ```
 
 ## Building Standalone Applications
@@ -93,16 +87,16 @@ Build platform-specific executables using PyInstaller:
 
 ```bash
 # Install build dependencies
-poetry install --with build
+pip install pyinstaller pillow
 
 # Build for macOS
-poetry run python build_scripts/build_macos.py
+python build_scripts/build_macos.py
 
 # Build for Windows (on Windows)
-poetry run python build_scripts/build_windows.py
+python build_scripts/build_windows.py
 
 # Build for Linux (on Linux)
-poetry run python build_scripts/build_linux.py
+python build_scripts/build_linux.py
 ```
 
 Built applications will be in the `dist/` directory:
@@ -127,9 +121,8 @@ env \
   PYTHON_CONFIGURE_OPTS="--with-tcltk-includes='-I$(brew --prefix tcl-tk)/include' --with-tcltk-libs='-L$(brew --prefix tcl-tk)/lib -ltcl8.6 -ltk8.6'" \
   pyenv install --force 3.13.3
 
-# Reinstall poetry environment
-poetry env remove --all
-poetry install
+# Reinstall Python packages
+pip install -e .
 ```
 
 ## License
