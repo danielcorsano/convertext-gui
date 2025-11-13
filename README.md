@@ -52,7 +52,7 @@ The application shows conversion progress with percentage and ETA. When complete
 
 ## 💝 Support This Project
 
-If you find this tool helpful, please consider [sponsoring the project](https://github.com/sponsors/danielcorsano). I created and maintain this software alone as a public service, and donations help me improve it and develop requested features.
+If you find this tool helpful, please consider [sponsoring the project](https://github.com/sponsors/danielcorsano). I created and maintain this software alone as a public service, and donations help me improve it and develop requested features. If I get $99 of donations, I will use it to pay for the Apple developer program so I can make iOS versions of all my open source apps.
 
 Your support makes a real difference in keeping this project active and growing. Thank you!
 
