@@ -1,11 +1,9 @@
 """Build Linux executable using PyInstaller."""
 
 import PyInstaller.__main__
-import sys
 from pathlib import Path
+from build_scripts.common import PROJECT_ROOT, get_common_args
 
-# Get project root
-PROJECT_ROOT = Path(__file__).parent.parent
 ICON_PATH = PROJECT_ROOT / "convertext_gui" / "assets" / "icon.png"
 
 def build_linux():
@@ -17,27 +15,10 @@ def build_linux():
         "--onefile",
         f"--icon={ICON_PATH}" if ICON_PATH.exists() else "",
         "--add-data=convertext_gui/assets:convertext_gui/assets",
-        "--hidden-import=convertext",
-        "--hidden-import=convertext.converters",
-        "--hidden-import=convertext.core",
-        "--hidden-import=convertext.config",
-        "--hidden-import=convertext.registry",
-        "--hidden-import=tkinter",
-        "--hidden-import=ttkbootstrap",
-        "--hidden-import=queue",
-        # Size optimizations
-        "--strip",  # Remove debug symbols
-        "--exclude-module=test",
-        "--exclude-module=unittest",
-        "--exclude-module=email",
-        "--exclude-module=http.server",
-        "--exclude-module=pydoc",
-        "--exclude-module=lib2to3",
-        "--noconfirm",
-        "--clean",
+        "--strip",
+        *get_common_args(),
     ]
 
-    # Remove empty icon arg if file doesn't exist
     args = [arg for arg in args if arg]
 
     print("Building Linux executable...")

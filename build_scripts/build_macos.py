@@ -1,46 +1,27 @@
 """Build macOS .app bundle using PyInstaller."""
 
 import PyInstaller.__main__
-import sys
 import os
 from pathlib import Path
+from build_scripts.common import PROJECT_ROOT, get_common_args
 
-# Get project root
-PROJECT_ROOT = Path(__file__).parent.parent
 ICON_PATH = PROJECT_ROOT / "convertext_gui" / "assets" / "icon.icns"
 ASSETS_PATH = PROJECT_ROOT / "convertext_gui" / "assets"
 
 def build_macos():
     """Build macOS application bundle."""
 
-    # Change to project root for relative paths
     os.chdir(PROJECT_ROOT)
 
     args = [
         str(PROJECT_ROOT / "convertext_gui" / "gui.py"),
         "--name=ConverText",
         "--windowed",
-        "--onedir",  # Changed from onefile - better for macOS .app bundles
+        "--onedir",
         f"--icon={ICON_PATH}",
         f"--add-data={ASSETS_PATH}{os.pathsep}convertext_gui/assets",
-        "--hidden-import=convertext",
-        "--hidden-import=convertext.converters",
-        "--hidden-import=convertext.core",
-        "--hidden-import=convertext.config",
-        "--hidden-import=convertext.registry",
-        "--hidden-import=tkinter",
-        "--hidden-import=ttkbootstrap",
-        "--hidden-import=queue",
-        # Size optimizations
-        "--strip",  # Remove debug symbols
-        "--exclude-module=test",
-        "--exclude-module=unittest",
-        "--exclude-module=email",
-        "--exclude-module=http.server",
-        "--exclude-module=pydoc",
-        "--exclude-module=lib2to3",
-        "--noconfirm",
-        "--clean",
+        "--strip",
+        *get_common_args(),
     ]
 
     print("Building macOS application...")

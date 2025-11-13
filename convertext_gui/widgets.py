@@ -46,13 +46,16 @@ class DropZone(ttk.Frame):
         files = filedialog.askopenfilenames(
             title="Select Files to Convert",
             filetypes=[
-                ("All Supported", "*.pdf;*.docx;*.doc;*.txt;*.md;*.html;*.epub;*.rtf;*.odt"),
+                ("All Supported", "*.pdf;*.docx;*.doc;*.txt;*.md;*.html;*.epub;*.mobi;*.azw;*.azw3;*.fb2;*.rtf;*.odt"),
                 ("PDF", "*.pdf"),
                 ("Word", "*.docx;*.doc"),
                 ("Text", "*.txt"),
                 ("Markdown", "*.md"),
                 ("HTML", "*.html;*.htm"),
                 ("EPUB", "*.epub"),
+                ("MOBI", "*.mobi"),
+                ("AZW", "*.azw;*.azw3"),
+                ("FB2", "*.fb2"),
                 ("RTF", "*.rtf"),
                 ("ODT", "*.odt"),
                 ("All Files", "*.*")
