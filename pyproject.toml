@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "convertext-gui"
-version = "0.2.0"
+version = "0.2.1"
 description = "Desktop GUI application for ConverText file converter"
 authors = ["danielcorsano"]
 readme = "README.md"
