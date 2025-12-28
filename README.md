@@ -4,7 +4,7 @@
 
 Desktop GUI application for ConverText file converter with Monaco monospace typography and minimalist black/yellow design.
 
-Convert between all major document and ebook formats with a single click. Get editable .txt or .md from PDF or ebook formats or make ebooks/PDFs from editable text formats. Work on multiple files at the same time and send them anywhere in the file system instantly.
+Convert between all major document and ebook formats with a single click. Get editable .txt or .md from PDF or ebook formats, or create ebooks, PDFs, and Word documents from any supported format. Work on multiple files at the same time and send them anywhere in the file system instantly.
 
 ## Features
 
@@ -31,7 +31,7 @@ No Python installation required!
 
 1. Launch ConverText
 2. Click "Browse..." to select files
-3. Select output formats (EPUB, HTML, TXT, MOBI, FB2, etc.)
+3. Select output formats (PDF, DOCX, RTF, EPUB, HTML, TXT, MOBI, FB2, Markdown)
 4. Choose output directory (defaults to source file location)
 5. Click "Convert"
 
@@ -48,7 +48,7 @@ The application shows conversion progress with percentage and ETA. When complete
 
 **Input**: PDF, DOCX, DOC, ODT, RTF, TXT, Markdown, HTML, EPUB, MOBI, AZW, FB2
 
-**Output**: TXT, Markdown, HTML, EPUB, MOBI, FB2
+**Output**: PDF, DOCX, RTF, TXT, Markdown, HTML, EPUB, MOBI, FB2
 
 ## 💝 Support This Project
 
