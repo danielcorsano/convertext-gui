@@ -53,7 +53,6 @@ def get_common_args():
         # Exclusions
         "--exclude-module=test",
         "--exclude-module=unittest",
-        "--exclude-module=email",
         "--exclude-module=http.server",
         "--exclude-module=pydoc",
         "--exclude-module=lib2to3",

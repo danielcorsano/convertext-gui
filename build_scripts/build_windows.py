@@ -13,12 +13,12 @@ def build_windows():
     # Check that convertext package exists
     convertext_path = PROJECT_ROOT.parent / "convertext"
     if not convertext_path.exists():
-        print(f"\n❌ ERROR: convertext package not found at {convertext_path}")
+        print(f"\nERROR: convertext package not found at {convertext_path}")
         print("   Make sure the convertext package is in ../convertext/")
         print("   Clone it with: cd .. && git clone https://github.com/danielcorsano/convertext.git")
         sys.exit(1)
 
-    print(f"✓ Found convertext package at {convertext_path}")
+    print(f"Found convertext package at {convertext_path}")
 
     args = [
         str(PROJECT_ROOT / "convertext_gui" / "gui.py"),
@@ -36,11 +36,11 @@ def build_windows():
     if ICON_PATH.exists():
         print(f"Icon: {ICON_PATH}")
     else:
-        print("⚠ Warning: icon.ico not found, building without icon")
+        print("Warning: icon.ico not found, building without icon")
 
     PyInstaller.__main__.run(args)
 
-    print("\n✓ Build complete!")
+    print("\nBuild complete!")
     print(f"Executable: {PROJECT_ROOT}/dist/ConverText.exe")
     print("\nTo test:")
     print("  dist\\ConverText.exe")

@@ -16,12 +16,12 @@ def build_macos():
     # Check that convertext package exists
     convertext_path = PROJECT_ROOT.parent / "convertext"
     if not convertext_path.exists():
-        print(f"\n❌ ERROR: convertext package not found at {convertext_path}")
+        print(f"\nERROR: convertext package not found at {convertext_path}")
         print("   Make sure the convertext package is in ../convertext/")
         print("   Clone it with: cd .. && git clone https://github.com/danielcorsano/convertext.git")
         sys.exit(1)
 
-    print(f"✓ Found convertext package at {convertext_path}")
+    print(f" Found convertext package at {convertext_path}")
 
     os.chdir(PROJECT_ROOT)
 
@@ -49,7 +49,7 @@ def build_macos():
         shutil.rmtree(redundant_dir)
         print(f"\nCleaned up: {redundant_dir}")
 
-    print("\n✓ Build complete!")
+    print("\n Build complete!")
     print(f"Application: {PROJECT_ROOT}/dist/ConverText.app")
 
     # Create DMG for distribution
@@ -71,10 +71,10 @@ def build_macos():
             "-format", "UDZO",
             str(dmg_path)
         ], check=True)
-        print(f"\n✓ DMG created: {dmg_path}")
+        print(f"\n DMG created: {dmg_path}")
         print(f"  Size: {dmg_path.stat().st_size / (1024*1024):.1f} MB")
     except subprocess.CalledProcessError as e:
-        print(f"\n⚠ Warning: Failed to create DMG: {e}")
+        print(f"\nWarning: Failed to create DMG: {e}")
         print("  The .app file is still available for distribution")
 
     print("\nTo test:")
