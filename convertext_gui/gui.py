@@ -9,8 +9,6 @@ from ttkbootstrap.constants import *
 import queue
 
 from convertext.converters.loader import load_converters
-from convertext.config import Config
-from convertext.core import ConversionEngine
 from convertext.registry import get_registry
 
 from convertext_gui.widgets import DropZone, FileList, DebugConsole
@@ -108,10 +106,8 @@ class ConvertExtGUI(ttk.Window):
         logger.info(f"Debug mode: {self.debug_mode}")
         logger.info(f"Log file: {self.log_file}")
 
-        # Initialize convertext
+        # Initialize convertext (load converters for format detection)
         load_converters()
-        self.convertext_config = Config()
-        self.engine = ConversionEngine(self.convertext_config)
 
         # State
         self.format_vars = {}
@@ -143,7 +139,7 @@ class ConvertExtGUI(ttk.Window):
         self.drop_zone.pack(fill=X, padx=21, pady=21)
 
         # File list
-        self.file_list = FileList(self)
+        self.file_list = FileList(self, on_add_callback=self._on_add_more_files)
         self.file_list.pack(fill=BOTH, expand=True, padx=21, pady=13)
 
         # Format selection
@@ -304,10 +300,25 @@ class ConvertExtGUI(ttk.Window):
         )
         self.status_label.pack(anchor=W)
 
-    def _on_files_dropped(self, files):
+    def _on_files_dropped(self, files, replace=True):
         """Handle files dropped or selected."""
+        if replace:
+            self.file_list.clear()
         self.file_list.add_files(files)
         self._update_output_from_files()
+
+    def _on_add_more_files(self):
+        """Open file dialog to add more files without replacing."""
+        from tkinter import filedialog
+        files = filedialog.askopenfilenames(
+            title="Add More Files",
+            filetypes=[
+                ("All Supported", "*.pdf;*.docx;*.doc;*.txt;*.md;*.html;*.epub;*.mobi;*.azw;*.azw3;*.fb2;*.rtf;*.odt"),
+                ("All Files", "*.*")
+            ]
+        )
+        if files:
+            self._on_files_dropped(files, replace=False)
 
     def _update_output_from_files(self):
         """Update output path based on first selected file."""
@@ -347,11 +358,10 @@ class ConvertExtGUI(ttk.Window):
         self.convert_btn.configure(state="disabled", text="Converting...")
         self.progress_bar['value'] = 0
 
-        # Start thread
+        # Start thread (creates fresh engine, ignores local config files)
         from convertext_gui.threads import ConversionThread
         logger.info(f"Starting conversion: {len(self.file_list.files)} files to {selected_formats}")
         thread = ConversionThread(
-            engine=self.engine,
             files=self.file_list.files,
             formats=selected_formats,
             output_dir=self.output_dir,

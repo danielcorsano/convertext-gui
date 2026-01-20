@@ -76,9 +76,10 @@ class DropZone(ttk.Frame):
 class FileList(ttk.Frame):
     """Display and manage selected files."""
 
-    def __init__(self, parent):
+    def __init__(self, parent, on_add_callback=None):
         super().__init__(parent)
         self.files = []
+        self.on_add_callback = on_add_callback
 
         # Header
         header = ttk.Label(
@@ -106,6 +107,21 @@ class FileList(ttk.Frame):
 
         self.file_widgets = []
 
+        # Add button frame (shown when files exist)
+        self.add_btn_frame = ttk.Frame(self)
+        self.add_btn = ttk.Button(
+            self.add_btn_frame,
+            text="+",
+            width=3,
+            command=self._on_add_click
+        )
+        self.add_btn.pack(anchor=W, padx=5)
+
+    def _on_add_click(self):
+        """Handle add button click."""
+        if self.on_add_callback:
+            self.on_add_callback()
+
     def add_files(self, file_paths):
         """Add files to list."""
         for path in file_paths:
@@ -113,6 +129,9 @@ class FileList(ttk.Frame):
             if p not in self.files:
                 self.files.append(p)
                 self._add_file_widget(p)
+        # Show add button when files exist
+        if self.files and self.on_add_callback:
+            self.add_btn_frame.pack(fill=X, pady=(5, 0))
 
     def _add_file_widget(self, file_path):
         """Add file widget to scrollable list."""
@@ -151,6 +170,7 @@ class FileList(ttk.Frame):
             frame.destroy()
         self.files.clear()
         self.file_widgets.clear()
+        self.add_btn_frame.pack_forget()
 
 
 class DebugConsole(tk.Toplevel):

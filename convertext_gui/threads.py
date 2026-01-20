@@ -5,16 +5,24 @@ import logging
 import time
 from pathlib import Path
 from convertext.core import ConversionEngine
+from convertext.config import Config
 
 logger = logging.getLogger(__name__)
+
+
+class GUIConfig(Config):
+    """Config subclass that ignores local config files (GUI uses explicit settings)."""
+
+    def load_file_config(self, file_path):
+        """No-op: GUI settings take priority over local config files."""
+        pass
 
 
 class ConversionThread(threading.Thread):
     """Background thread for file conversion."""
 
-    def __init__(self, engine, files, formats, output_dir, overwrite, keep_intermediate, callback):
+    def __init__(self, files, formats, output_dir, overwrite, keep_intermediate, callback):
         super().__init__(daemon=True)
-        self.engine = engine
         self.files = files
         self.formats = formats
         self.output_dir = output_dir
@@ -32,17 +40,20 @@ class ConversionThread(threading.Thread):
 
         logger.info(f"Starting conversion: {len(self.files)} files, {len(self.formats)} formats")
 
-        # Update config
+        # Create fresh config with GUI settings only (ignores local config files)
+        config = GUIConfig()
+
         if self.output_dir:
-            self.engine.config.override({'output': {'directory': str(self.output_dir)}})
+            config.override({'output': {'directory': str(self.output_dir)}})
             logger.debug(f"Output directory: {self.output_dir}")
 
         if self.overwrite:
-            self.engine.config.override({'output': {'overwrite': True}})
+            config.override({'output': {'overwrite': True}})
             logger.debug("Overwrite enabled")
 
+        # Create fresh engine for this conversion
+        engine = ConversionEngine(config, keep_intermediate=self.keep_intermediate)
         if self.keep_intermediate:
-            self.engine.config.override({'conversion': {'keep_intermediate': True}})
             logger.debug("Keep intermediate files enabled")
 
         for file in self.files:
@@ -51,7 +62,7 @@ class ConversionThread(threading.Thread):
 
                 try:
                     # Convert
-                    result = self.engine.convert(file, fmt)
+                    result = engine.convert(file, fmt)
                     self.results.append(result)
 
                     if result.success:
