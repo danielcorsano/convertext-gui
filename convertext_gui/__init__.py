@@ -1,3 +1,3 @@
 """ConverText GUI - Desktop application for file conversion."""
 
-__version__ = "0.2.1"
+__version__ = "0.2.4"

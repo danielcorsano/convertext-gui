@@ -32,6 +32,7 @@ def get_common_args():
         # Ebook converters
         "--hidden-import=convertext.converters.ebooks.epub",
         "--hidden-import=convertext.converters.ebooks.mobi",
+        "--hidden-import=convertext.converters.ebooks.azw3",
         "--hidden-import=convertext.converters.ebooks.fb2",
 
         # GUI dependencies
