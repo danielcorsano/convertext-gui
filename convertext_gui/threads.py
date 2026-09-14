@@ -3,19 +3,10 @@
 import threading
 import logging
 import time
-from pathlib import Path
 from convertext.core import ConversionEngine
 from convertext.config import Config
 
 logger = logging.getLogger(__name__)
-
-
-class GUIConfig(Config):
-    """Config subclass that ignores local config files (GUI uses explicit settings)."""
-
-    def load_file_config(self, file_path):
-        """No-op: GUI settings take priority over local config files."""
-        pass
 
 
 class ConversionThread(threading.Thread):
@@ -40,19 +31,19 @@ class ConversionThread(threading.Thread):
 
         logger.info(f"Starting conversion: {len(self.files)} files, {len(self.formats)} formats")
 
-        # Create fresh config with GUI settings only (ignores local config files)
-        config = GUIConfig()
-
+        # GUI settings go through overrides so they are applied after any
+        # directory convertext.yaml the engine discovers per file.
+        overrides = {'output': {'overwrite': self.overwrite}}
         if self.output_dir:
-            config.override({'output': {'directory': str(self.output_dir)}})
+            overrides['output']['directory'] = str(self.output_dir)
             logger.debug(f"Output directory: {self.output_dir}")
+        logger.debug(f"Overwrite: {self.overwrite}")
 
-        if self.overwrite:
-            config.override({'output': {'overwrite': True}})
-            logger.debug("Overwrite enabled")
-
-        # Create fresh engine for this conversion
-        engine = ConversionEngine(config, keep_intermediate=self.keep_intermediate)
+        engine = ConversionEngine(
+            Config(),
+            keep_intermediate=self.keep_intermediate,
+            overrides=overrides,
+        )
         if self.keep_intermediate:
             logger.debug("Keep intermediate files enabled")
 
@@ -72,7 +63,7 @@ class ConversionThread(threading.Thread):
 
                 except Exception as e:
                     logger.exception(f"Conversion failed for {file.name} to {fmt}: {e}")
-                    # Create a mock result for error tracking
+                    # Stand-in result so the failure still reaches the UI
                     from types import SimpleNamespace
                     result = SimpleNamespace(
                         success=False,

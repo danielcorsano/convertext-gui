@@ -9,13 +9,19 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
-@pytest.fixture
-def mock_convertext_engine():
-    """Mock convertext engine for testing."""
-    from unittest.mock import Mock
-    engine = Mock()
-    engine.convert = Mock()
-    return engine
+@pytest.fixture(scope="session")
+def tk_root():
+    """Real Tk root window, shared across tests. Skips when no display."""
+    import tkinter as tk
+
+    try:
+        root = tk.Tk()
+    except tk.TclError as e:
+        pytest.skip(f"No display available: {e}")
+
+    root.withdraw()
+    yield root
+    root.destroy()
 
 
 @pytest.fixture

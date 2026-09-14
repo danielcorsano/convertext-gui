@@ -26,7 +26,7 @@ jobs:
       - name: Checkout convertext dependency
         run: |
           cd ..
-          git clone https://github.com/danielcorsano/convertext.git
+          git clone --branch v0.4.0 --depth 1 https://github.com/danielcorsano/convertext.git
 
       - name: Install dependencies
         run: poetry install --with build
@@ -58,7 +58,7 @@ jobs:
       - name: Checkout convertext dependency
         run: |
           cd ..
-          git clone https://github.com/danielcorsano/convertext.git
+          git clone --branch v0.4.0 --depth 1 https://github.com/danielcorsano/convertext.git
 
       - name: Install dependencies
         run: poetry install --with build
@@ -90,7 +90,7 @@ jobs:
       - name: Checkout convertext dependency
         run: |
           cd ..
-          git clone https://github.com/danielcorsano/convertext.git
+          git clone --branch v0.4.0 --depth 1 https://github.com/danielcorsano/convertext.git
 
       - name: Install dependencies
         run: poetry install --with build

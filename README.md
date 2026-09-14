@@ -1,7 +1,5 @@
 # ConverText GUI
 
-> **⚠️ Beta Release**: This is a beta version. Builds for Windows and Linux are untested on those platforms. Please report any issues on GitHub.
-
 Desktop GUI application for ConverText file converter with Monaco monospace typography and minimalist black/yellow design.
 
 Convert between all major document and ebook formats with a single click. Get editable .txt or .md from PDF or ebook formats, or create ebooks, PDFs, and Word documents from any supported format. Work on multiple files at the same time and send them anywhere in the file system instantly.
@@ -15,23 +13,26 @@ Convert between all major document and ebook formats with a single click. Get ed
 - Automatic output directory detection
 - Cross-platform (Windows, macOS, Linux)
 
+MOBI output carries the source's own chapter navigation, tappable chapter links, a Go To
+table of contents and a cover thumbnail. Inline images are carried from EPUB, HTML, DOCX
+and PDF sources into EPUB and MOBI output.
+
 ## Installation
 
-Download the latest beta release for your platform from [GitHub Releases](https://github.com/danielcorsano/convertext-gui/releases):
+Download the latest release for your platform from [GitHub Releases](https://github.com/danielcorsano/convertext-gui/releases):
 
-- **macOS**: ConverText-macos.zip (tested ✅)
-- **Windows**: ConverText.exe (untested ⚠️)
-- **Linux**: ConverText-linux.tar.gz (untested ⚠️)
+- **macOS**: ConverText.dmg
+- **Windows**: ConverText.exe
+- **Linux**: ConverText-linux.tar.gz
 
-No Python installation required!
-
-**Beta Feedback**: Please report issues, bugs, or feature requests on GitHub Issues.
+No Python installation required. The macOS build gets the most testing; please report
+Windows and Linux issues on GitHub Issues.
 
 ## Usage
 
 1. Launch ConverText
 2. Click "Browse..." to select files
-3. Select output formats (PDF, DOCX, RTF, EPUB, HTML, TXT, MOBI, FB2, Markdown)
+3. Select output formats (PDF, DOCX, RTF, TXT, Markdown, HTML, EPUB, MOBI, FB2)
 4. Choose output directory (defaults to source file location)
 5. Click "Convert"
 
@@ -46,9 +47,12 @@ The application shows conversion progress with percentage and ETA. When complete
 
 ## Supported Formats
 
-**Input**: PDF, DOCX, DOC, ODT, RTF, TXT, Markdown, HTML, EPUB, MOBI, AZW, FB2
+**Input**: PDF, DOCX, DOC, ODT, RTF, TXT, Markdown, HTML, EPUB, MOBI, AZW, AZW3, FB2
 
 **Output**: PDF, DOCX, RTF, TXT, Markdown, HTML, EPUB, MOBI, FB2
+
+AZW3 output is not offered: it is still beta upstream and unreliable on Kindle devices.
+Use MOBI for Kindle. Reading `.azw` and `.azw3` files works normally.
 
 ## 💝 Support This Project
 

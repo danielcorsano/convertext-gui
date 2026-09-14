@@ -1,159 +1,173 @@
 """Tests for GUI widgets."""
 
-import pytest
 from pathlib import Path
-from unittest.mock import Mock, MagicMock, patch
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 
 class TestFileList:
     """Tests for FileList widget."""
 
-    def test_add_files(self):
+    def test_add_files(self, tk_root):
         """Test adding files to the list."""
-        # Mock tkinter to avoid display requirement
-        with patch('convertext_gui.widgets.ttk'), \
-             patch('convertext_gui.widgets.tk'):
+        from convertext_gui.widgets import FileList
 
-            from convertext_gui.widgets import FileList
+        file_list = FileList(tk_root)
+        file_list.add_files(["/tmp/test1.pdf", "/tmp/test2.docx"])
 
-            # Create mock parent
-            parent = Mock()
-            file_list = FileList(parent)
+        assert len(file_list.files) == 2
+        assert file_list.files[0] == Path("/tmp/test1.pdf")
+        assert file_list.files[1] == Path("/tmp/test2.docx")
 
-            # Add files
-            files = ["/tmp/test1.pdf", "/tmp/test2.docx"]
-            file_list.add_files(files)
-
-            # Verify files were added
-            assert len(file_list.files) == 2
-            assert file_list.files[0] == Path("/tmp/test1.pdf")
-            assert file_list.files[1] == Path("/tmp/test2.docx")
-
-    def test_add_duplicate_files(self):
+    def test_add_duplicate_files(self, tk_root):
         """Test that duplicate files are not added."""
-        with patch('convertext_gui.widgets.ttk'), \
-             patch('convertext_gui.widgets.tk'):
+        from convertext_gui.widgets import FileList
 
-            from convertext_gui.widgets import FileList
+        file_list = FileList(tk_root)
+        file_list.add_files(["/tmp/test.pdf"])
+        file_list.add_files(["/tmp/test.pdf"])
 
-            parent = Mock()
-            file_list = FileList(parent)
+        assert len(file_list.files) == 1
 
-            # Add same file twice
-            file_list.add_files(["/tmp/test.pdf"])
-            file_list.add_files(["/tmp/test.pdf"])
-
-            # Should only have one file
-            assert len(file_list.files) == 1
-
-    def test_clear(self):
+    def test_clear(self, tk_root):
         """Test clearing the file list."""
-        with patch('convertext_gui.widgets.ttk'), \
-             patch('convertext_gui.widgets.tk'):
+        from convertext_gui.widgets import FileList
 
-            from convertext_gui.widgets import FileList
+        file_list = FileList(tk_root)
+        file_list.add_files(["/tmp/test1.pdf", "/tmp/test2.docx"])
+        file_list.clear()
 
-            parent = Mock()
-            file_list = FileList(parent)
+        assert len(file_list.files) == 0
+        assert len(file_list.file_widgets) == 0
 
-            # Add files then clear
-            file_list.add_files(["/tmp/test1.pdf", "/tmp/test2.docx"])
-            file_list.clear()
 
-            # Verify cleared
-            assert len(file_list.files) == 0
-            assert len(file_list.file_widgets) == 0
+class TestFileTypes:
+    """Tests for the shared file dialog filter."""
+
+    def test_covers_every_registry_source(self):
+        """Every format convertext can read must be selectable in the browser."""
+        from convertext.converters.loader import load_converters
+        from convertext.registry import get_registry
+        from convertext_gui.widgets import FILE_TYPES
+
+        load_converters()
+        offered = {pat.lstrip('*.') for _, pats in FILE_TYPES for pat in pats}
+        missing = set(get_registry().list_supported_formats()) - offered
+        assert not missing, f"file dialog cannot select: {sorted(missing)}"
+
+    def test_patterns_are_sequences_not_joined_strings(self):
+        """Semicolon-joined patterns are a Win32 form Tk mishandles elsewhere."""
+        from convertext_gui.widgets import FILE_TYPES
+
+        for label, patterns in FILE_TYPES:
+            assert isinstance(patterns, tuple), label
+            assert not any(';' in p for p in patterns), label
 
 
 class TestConversionThread:
     """Tests for ConversionThread."""
 
-    def test_thread_initialization(self):
-        """Test thread initializes with correct parameters."""
+    def _thread(self, **kwargs):
         from convertext_gui.threads import ConversionThread
 
-        engine = Mock()
+        params = dict(
+            files=[Path("/tmp/test.pdf")],
+            formats=["txt"],
+            output_dir=None,
+            overwrite=False,
+            keep_intermediate=False,
+            callback=Mock(),
+        )
+        params.update(kwargs)
+        return ConversionThread(**params)
+
+    def test_thread_initialization(self):
+        """Test thread initializes with correct parameters."""
         files = [Path("/tmp/test.pdf")]
         formats = ["txt", "epub"]
         output_dir = Path("/tmp/output")
         callback = Mock()
 
-        thread = ConversionThread(
-            engine=engine,
+        thread = self._thread(
             files=files,
             formats=formats,
             output_dir=output_dir,
             overwrite=True,
-            keep_intermediate=False,
-            callback=callback
+            callback=callback,
         )
 
-        assert thread.engine == engine
         assert thread.files == files
         assert thread.formats == formats
         assert thread.output_dir == output_dir
         assert thread.overwrite is True
         assert thread.keep_intermediate is False
+        assert thread.callback is callback
 
     def test_thread_conversion_success(self):
         """Test successful conversion."""
-        from convertext_gui.threads import ConversionThread
-        from types import SimpleNamespace
-
-        # Mock successful conversion
         mock_result = SimpleNamespace(
             success=True,
             source_path=Path("/tmp/test.pdf"),
             target_path=Path("/tmp/test.txt"),
-            error=None
+            error=None,
         )
+        thread = self._thread()
 
-        engine = Mock()
-        engine.convert = Mock(return_value=mock_result)
-        callback = Mock()
+        with patch('convertext_gui.threads.ConversionEngine') as engine_cls:
+            engine_cls.return_value.convert.return_value = mock_result
+            thread.run()
 
-        thread = ConversionThread(
-            engine=engine,
-            files=[Path("/tmp/test.pdf")],
-            formats=["txt"],
-            output_dir=None,
-            overwrite=False,
-            keep_intermediate=False,
-            callback=callback
-        )
+            engine_cls.return_value.convert.assert_called_once()
 
-        thread.run()
-
-        # Verify conversion was called
-        engine.convert.assert_called_once()
         assert len(thread.results) == 1
         assert thread.results[0].success is True
 
     def test_thread_conversion_failure(self):
         """Test conversion failure handling."""
-        from convertext_gui.threads import ConversionThread
+        thread = self._thread()
 
-        # Mock failed conversion
-        engine = Mock()
-        engine.convert = Mock(side_effect=Exception("Conversion failed"))
-        callback = Mock()
+        with patch('convertext_gui.threads.ConversionEngine') as engine_cls:
+            engine_cls.return_value.convert.side_effect = Exception("Conversion failed")
+            thread.run()
 
-        thread = ConversionThread(
-            engine=engine,
-            files=[Path("/tmp/test.pdf")],
-            formats=["txt"],
-            output_dir=None,
-            overwrite=False,
-            keep_intermediate=False,
-            callback=callback
-        )
-
-        thread.run()
-
-        # Verify error was handled
         assert len(thread.results) == 1
         assert thread.results[0].success is False
         assert "Conversion failed" in thread.results[0].error
+
+    def test_gui_settings_passed_as_engine_overrides(self):
+        """GUI settings must reach the engine as overrides.
+
+        convertext applies overrides after the per-file directory config, so
+        passing them any other way lets a stray convertext.yaml win.
+        """
+        thread = self._thread(output_dir=Path("/tmp/output"), overwrite=True)
+
+        with patch('convertext_gui.threads.ConversionEngine') as engine_cls:
+            engine_cls.return_value.convert.return_value = SimpleNamespace(
+                success=True,
+                source_path=Path("/tmp/test.pdf"),
+                target_path=Path("/tmp/output/test.txt"),
+                error=None,
+            )
+            thread.run()
+
+        overrides = engine_cls.call_args.kwargs['overrides']
+        assert overrides == {'output': {'overwrite': True, 'directory': '/tmp/output'}}
+
+    def test_unchecked_overwrite_is_explicit(self):
+        """An unchecked box must override a config file's overwrite: true."""
+        thread = self._thread(overwrite=False)
+
+        with patch('convertext_gui.threads.ConversionEngine') as engine_cls:
+            engine_cls.return_value.convert.return_value = SimpleNamespace(
+                success=True,
+                source_path=Path("/tmp/test.pdf"),
+                target_path=Path("/tmp/test.txt"),
+                error=None,
+            )
+            thread.run()
+
+        assert engine_cls.call_args.kwargs['overrides']['output']['overwrite'] is False
 
 
 class TestLoggingConfig:
@@ -163,7 +177,6 @@ class TestLoggingConfig:
         """Test development mode detection."""
         from convertext_gui.logging_config import is_development_mode
 
-        # In test environment, should be development mode
         assert is_development_mode() is True
 
     def test_setup_logging(self):
@@ -173,10 +186,8 @@ class TestLoggingConfig:
 
         log_file = setup_logging(debug=True)
 
-        # Verify log file was created
         assert log_file.exists()
         assert log_file.name.startswith("gui_")
 
-        # Verify logging is configured
         logger = logging.getLogger()
         assert logger.level == logging.DEBUG

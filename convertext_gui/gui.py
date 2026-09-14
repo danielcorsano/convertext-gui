@@ -11,10 +11,14 @@ import queue
 from convertext.converters.loader import load_converters
 from convertext.registry import get_registry
 
-from convertext_gui.widgets import DropZone, FileList, DebugConsole
+from convertext_gui.widgets import DropZone, FileList, DebugConsole, FILE_TYPES
 from convertext_gui.logging_config import setup_logging
 
 logger = logging.getLogger(__name__)
+
+# Registered in convertext but not fit to ship: AZW3 output is beta and
+# unreliable on Kindle devices. AZW3 input is unaffected.
+BETA_FORMATS = {'azw3'}
 
 
 class ConvertExtGUI(ttk.Window):
@@ -167,10 +171,11 @@ class ConvertExtGUI(ttk.Window):
         registry = get_registry()
         formats = registry.list_supported_formats()
 
-        # Unique target formats
+        # Unique target formats, minus anything still beta upstream
         all_targets = set()
         for targets in formats.values():
             all_targets.update(targets)
+        all_targets -= BETA_FORMATS
 
         # Create checkboxes (3 per row)
         row_frame = None
@@ -312,10 +317,7 @@ class ConvertExtGUI(ttk.Window):
         from tkinter import filedialog
         files = filedialog.askopenfilenames(
             title="Add More Files",
-            filetypes=[
-                ("All Supported", "*.pdf;*.docx;*.doc;*.txt;*.md;*.html;*.epub;*.mobi;*.azw;*.azw3;*.fb2;*.rtf;*.odt"),
-                ("All Files", "*.*")
-            ]
+            filetypes=FILE_TYPES
         )
         if files:
             self._on_files_dropped(files, replace=False)

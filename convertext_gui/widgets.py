@@ -8,6 +8,26 @@ from ttkbootstrap.constants import *
 
 logger = logging.getLogger(__name__)
 
+# Extension tuples, not semicolon-joined strings: Tk on macOS/Linux treats a
+# joined string as one literal pattern.
+FILE_TYPES = [
+    ("All Supported", ("*.pdf", "*.docx", "*.doc", "*.odt", "*.rtf", "*.txt",
+                       "*.md", "*.markdown", "*.html", "*.htm", "*.epub",
+                       "*.mobi", "*.azw", "*.azw3", "*.fb2")),
+    ("PDF", ("*.pdf",)),
+    ("Word", ("*.docx", "*.doc")),
+    ("Text", ("*.txt",)),
+    ("Markdown", ("*.md", "*.markdown")),
+    ("HTML", ("*.html", "*.htm")),
+    ("EPUB", ("*.epub",)),
+    ("MOBI", ("*.mobi",)),
+    ("AZW", ("*.azw", "*.azw3")),
+    ("FB2", ("*.fb2",)),
+    ("RTF", ("*.rtf",)),
+    ("ODT", ("*.odt",)),
+    ("All Files", ("*.*",)),
+]
+
 
 class DropZone(ttk.Frame):
     """Drag-and-drop file zone."""
@@ -45,21 +65,7 @@ class DropZone(ttk.Frame):
         from tkinter import filedialog
         files = filedialog.askopenfilenames(
             title="Select Files to Convert",
-            filetypes=[
-                ("All Supported", "*.pdf;*.docx;*.doc;*.txt;*.md;*.html;*.epub;*.mobi;*.azw;*.azw3;*.fb2;*.rtf;*.odt"),
-                ("PDF", "*.pdf"),
-                ("Word", "*.docx;*.doc"),
-                ("Text", "*.txt"),
-                ("Markdown", "*.md"),
-                ("HTML", "*.html;*.htm"),
-                ("EPUB", "*.epub"),
-                ("MOBI", "*.mobi"),
-                ("AZW", "*.azw;*.azw3"),
-                ("FB2", "*.fb2"),
-                ("RTF", "*.rtf"),
-                ("ODT", "*.odt"),
-                ("All Files", "*.*")
-            ]
+            filetypes=FILE_TYPES
         )
         if files:
             self.on_drop_callback(files)
