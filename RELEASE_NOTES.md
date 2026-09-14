@@ -2,7 +2,7 @@
 
 Desktop application for converting between text, document, and ebook formats.
 
-## v0.3.0 (2026-09-12)
+## v0.3.0 (2026-09-14)
 
 Built on convertext 0.4.0.
 
